@@ -26,7 +26,7 @@ Created by Maciej Sojka
 import sys
 import importlib
 
-tool_path = r"{enter path to bookit folder}"
+tool_path = r"{enter path to Bookit_MayaTool folder}"
 
 if tool_path not in sys.path:
     sys.path.append(tool_path)
