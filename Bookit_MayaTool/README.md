@@ -9,7 +9,7 @@ Created by Maciej Sojka
 ---
 
 ## Requirements
- - Maya 2020+
+ - Maya 2025+
  - PySide6
 
 
