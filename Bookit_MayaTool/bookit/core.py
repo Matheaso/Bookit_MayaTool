@@ -75,6 +75,7 @@ class BookitTool:
 
 
     def clear_preview_books(self):
+
         if self.preview_books:
             for book in self.preview_books:
                 cmds.delete(book)
@@ -86,94 +87,100 @@ class BookitTool:
 
 
     def generate(self, seed):
-        self.last_seed = seed
-        prev_selection = cmds.ls(selection=True) or []
+        cmds.undoInfo(openChunk=True)
+        try:
+            self.last_seed = seed
+            prev_selection = cmds.ls(selection=True) or []
 
 
-        if not self.meshes:
-            cmds.warning("No Meshes")
-            return
+            if not self.meshes:
+                cmds.warning("No Meshes")
+                return
 
-        selection = cmds.ls(selection=True) or []
-        if selection and utl.is_curve(selection[0]):
-                self.curve = selection[0]
-                self.watch_curve_shape()
+            selection = cmds.ls(selection=True) or []
+            if selection and utl.is_curve(selection[0]):
+                    self.curve = selection[0]
+                    self.watch_curve_shape()
 
-        for book in self.preview_books:
-            if cmds.objExists(book):
-                cmds.delete(book)
+            for book in self.preview_books:
+                if cmds.objExists(book):
+                    cmds.delete(book)
 
-        self.preview_books = []
+            self.preview_books = []
 
-        rng = random.Random(int(seed))
+            rng = random.Random(int(seed))
 
-        books = self.meshes[:]
-        rng.shuffle(books)
+            books = self.meshes[:]
+            rng.shuffle(books)
 
-        current_distance = 0.0
-        curve_length = utl.get_curve_length(self.curve)
+            current_distance = 0.0
+            curve_length = utl.get_curve_length(self.curve)
 
-        offset = 0.1
+            offset = 0.1
 
-        while current_distance < curve_length:
-            source_book = rng.choice(books)
+            while current_distance < curve_length:
+                source_book = rng.choice(books)
 
 
-            book_bbox = utl.BBox(source_book)
+                book_bbox = utl.BBox(source_book)
 
-            width = book_bbox.z
+                width = book_bbox.z
 
-            if current_distance + width + offset * 2 > curve_length:
-                break
+                if current_distance + width + offset * 2 > curve_length:
+                    break
 
-            if rng.uniform(0, 100) < self.delete_percent:
+                if rng.uniform(0, 100) < self.delete_percent:
+                    current_distance += width + offset
+                    continue
+
+                new_book = cmds.duplicate(source_book, name=f"{source_book}_bookit#")[0]
+
+                sample_distance = current_distance + width * 0.5
+                percent = sample_distance / curve_length
+
+                pos = utl.sample_curve_at_percent(self.curve, percent)
+
+                next_percent = min(percent + 0.001, 1)
+                next_pos = utl.sample_curve_at_percent(self.curve, next_percent)
+
+                rot_y = utl.get_y_rotation_from_points(pos, next_pos)
+
+                rot_offset = rng.uniform(-2, 2)
+
+                pos_offset = utl.offset_side_curve(pos, next_pos, rng.uniform(-0.2, 0.2))
+
+                if self.rotate:
+                    cmds.xform(
+                        new_book,
+                        worldSpace=True,
+                        translation=(
+                            pos_offset[0] - book_bbox.x * 0.5 ,
+                            pos_offset[1],
+                            pos_offset[2],
+                        ),
+                        rotation=(0, rot_y + rot_offset + self.rotation_value, 0)
+                    )
+                else:
+                    cmds.xform(
+                        new_book,
+                        worldSpace=True,
+                        translation=(
+                            pos_offset[0] - book_bbox.x * 0.5,
+                            pos_offset[1] ,
+                            pos_offset[2] ,
+                        ),
+                        rotation=(0,self.rotation_value, 0)
+                    )
+
+                self.preview_books.append(new_book)
+
                 current_distance += width + offset
-                continue
-
-            new_book = cmds.duplicate(source_book, name=f"{source_book}_bookit#")[0]
-
-            sample_distance = current_distance + width * 0.5
-            percent = sample_distance / curve_length
-
-            pos = utl.sample_curve_at_percent(self.curve, percent)
-
-            next_percent = min(percent + 0.001, 1)
-            next_pos = utl.sample_curve_at_percent(self.curve, next_percent)
-
-            rot_y = utl.get_y_rotation_from_points(pos, next_pos)
-
-            rot_offset = rng.uniform(-2, 2)
-
-            pos_offset = utl.offset_side_curve(pos, next_pos, rng.uniform(-0.2, 0.2))
-
-            if self.rotate:
-                cmds.xform(
-                    new_book,
-                    worldSpace=True,
-                    translation=(
-                        pos_offset[0] - book_bbox.x * 0.5 ,
-                        pos_offset[1],
-                        pos_offset[2],
-                    ),
-                    rotation=(0, rot_y + rot_offset + self.rotation_value, 0)
-                )
+            if self.auto_select:
+                cmds.select(self.preview_books)
             else:
-                cmds.xform(
-                    new_book,
-                    worldSpace=True,
-                    translation=(
-                        pos_offset[0] - book_bbox.x * 0.5,
-                        pos_offset[1] ,
-                        pos_offset[2] ,
-                    ),
-                    rotation=(0,self.rotation_value, 0)
-                )
+                if prev_selection:
+                    cmds.select(prev_selection, replace=True)
 
-            self.preview_books.append(new_book)
-
-            current_distance += width + offset
-        if self.auto_select:
-            cmds.select(self.preview_books)
-        else:
-            if prev_selection:
-                cmds.select(prev_selection, replace=True)
+            cmds.setFocus("MayaWindow")
+        finally:
+            cmds.undoInfo(closeChunk=True)
