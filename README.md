@@ -43,6 +43,7 @@ dev.run()
 - Live update when curve changes
 - Chance to Skip Book (%)
 - Preview vs Bake workflow
+- Persistent settings with option to remove saved settings
 
 ---
 

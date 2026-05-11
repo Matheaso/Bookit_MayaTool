@@ -5,7 +5,12 @@ from PySide6 import QtCore, QtWidgets
 from shiboken6 import wrapInstance
 import maya.OpenMayaUI as omui
 
-from bookit import core, __version__, __title__
+from bookit import (
+    core,
+    __version__,
+    __title__,
+    settings
+)
 
 
 def main_window_ui():
@@ -34,6 +39,7 @@ class BookitToolUI(QtWidgets.QDialog):
         super(BookitToolUI, self).__init__(parent)
 
         self.core = core.BookitTool()
+        self.settings = settings.load_settings()
         self.was_button_clicked = False
 
         self.set_style()
@@ -43,6 +49,9 @@ class BookitToolUI(QtWidgets.QDialog):
         self.create_layout()
 
         self.create_connection()
+
+        self.apply_settings_to_ui()
+        self.apply_settings_to_core()
 
 
     def create_widget(self):
@@ -108,6 +117,7 @@ class BookitToolUI(QtWidgets.QDialog):
         self.draw_spline_button = QtWidgets.QPushButton("Draw Spline")
         self.select_created_books_button = QtWidgets.QPushButton("Created Books")
         self.bake_button = QtWidgets.QPushButton("Bake")
+        self.delete_settings_data_button = QtWidgets.QPushButton("Delete Settings Data")
 
         # variables
         self.seed_slider.valueChanged.connect(self.on_box_slider_value_changed)
@@ -117,6 +127,8 @@ class BookitToolUI(QtWidgets.QDialog):
         self.random_seed_checkbox = QtWidgets.QCheckBox("Random Seed")
         self.random_seed_checkbox.setChecked(True)
         self.random_seed_checkbox.toggled.connect(self.on_seed_changed)
+        self.auto_save_on_exit_checkbox = QtWidgets.QCheckBox("Auto Save On Exit")
+        self.auto_save_on_exit_checkbox.setChecked(False)
 
         self.rotate_checkbox = QtWidgets.QCheckBox("Rotate")
         self.rotate_checkbox.setChecked(True)
@@ -185,13 +197,16 @@ class BookitToolUI(QtWidgets.QDialog):
         additional_main_layout.addWidget(self.random_seed_checkbox)
         additional_main_layout.addWidget(self.rotate_checkbox)
         additional_main_layout.addWidget(self.select_created_checkbox)
+        additional_main_layout.addWidget(self.auto_save_on_exit_checkbox)
         rotation_layout.addWidget(self.rotation_label)
         rotation_layout.addWidget(self.rotation_slider)
         rotation_layout.addWidget(self.rotation_box)
+        additional_main_layout.addWidget(self.delete_settings_data_button)
 
 
         main_layout.addWidget(self.label)
         main_layout.addStretch()
+
 
     def create_connection(self):
         self.books_button.clicked.connect(self.on_set_meshes)
@@ -204,6 +219,54 @@ class BookitToolUI(QtWidgets.QDialog):
         self.rotation_box.valueChanged.connect(self.on_rotation_changed)
         self.delete_percent_slider.valueChanged.connect(self.on_delete_percent_changed)
         self.bake_button.clicked.connect(self.on_bake_button_clicked)
+        self.delete_settings_data_button.clicked.connect(self.on_delete_settings_data)
+
+
+    def on_delete_settings_data(self):
+        settings.delete_settings()
+
+        self.settings = settings.BookitSettings()
+
+        self.apply_settings_to_ui()
+        self.apply_settings_to_core()
+
+
+    def apply_settings_to_ui(self):
+        self.seed_slider.setValue(self.settings.seed)
+        self.seed_box.setValue(self.settings.seed)
+
+        self.random_seed_checkbox.setChecked(self.settings.random_seed)
+        self.rotate_checkbox.setChecked(self.settings.rotate)
+        self.select_created_checkbox.setChecked(self.settings.auto_select)
+        self.auto_save_on_exit_checkbox.setChecked(self.settings.auto_save_on_exit_button)
+
+        self.delete_percent_slider.setValue(self.settings.delete_percent)
+        self.delete_percent_box.setValue(self.settings.delete_percent)
+
+        self.rotation_slider.setValue(self.settings.rotation_value)
+        self.rotation_box.setValue(self.settings.rotation_value)
+
+        self.is_seed_random = self.settings.random_seed
+
+
+    def apply_settings_to_core(self):
+        self.core.rotate = self.settings.rotate
+        self.core.auto_select = self.settings.auto_select
+        self.core.delete_percent = self.settings.delete_percent
+        self.core.rotation_value = self.settings.rotation_value
+
+
+    def get_settings_from_ui(self) -> settings.BookitSettings:
+        return settings.BookitSettings(
+            seed=self.seed_slider.value(),
+            random_seed=self.random_seed_checkbox.isChecked(),
+            rotate=self.rotate_checkbox.isChecked(),
+            auto_select=self.select_created_checkbox.isChecked(),
+            delete_percent=self.delete_percent_slider.value(),
+            rotation_value=self.rotation_slider.value(),
+            auto_save_on_exit_button=self.auto_save_on_exit_checkbox.isChecked(),
+        )
+
 
     def on_bake_button_clicked(self):
         self.core.bake()
@@ -326,6 +389,9 @@ class BookitToolUI(QtWidgets.QDialog):
 
 
     def closeEvent(self, event):
+        if self.auto_save_on_exit_checkbox.isChecked():
+            settings.save_settings(self.get_settings_from_ui())
+
         self.core.cleanup()
         BookitToolUI.dlg_instance = None
         super().closeEvent(event)
