@@ -1,4 +1,3 @@
 
-__version__ = "1.0.0"
-__author__ = "Maciej 'Matheas' Sojka"
+__version__ = "1.0.2 'Matheas' Sojka"
 __title__ = "Bookit"
