@@ -153,6 +153,7 @@ class BookitToolUI(QtWidgets.QDialog):
         rotation_layout = QtWidgets.QHBoxLayout()
         bake_layout = QtWidgets.QHBoxLayout()
         delete_percent_layout = QtWidgets.QHBoxLayout()
+        grid = QtWidgets.QGridLayout()
 
         ## groups setup
         self.setup_group.setLayout(setup_layout)
@@ -195,11 +196,15 @@ class BookitToolUI(QtWidgets.QDialog):
         delete_percent_layout.addWidget(self.delete_percent_slider)
         delete_percent_layout.addWidget(self.delete_percent_box)
         additional_main_layout.addLayout(rotation_layout)
-        additional_main_layout.addWidget(self.random_seed_checkbox)
-        additional_main_layout.addWidget(self.rotate_checkbox)
-        additional_main_layout.addWidget(self.select_created_checkbox)
-        additional_main_layout.addWidget(self.auto_save_on_exit_checkbox)
-        additional_main_layout.addWidget(self.instancing_checkbox)
+
+        ## additional settings layout - checkboxes
+        additional_main_layout.addLayout(grid)
+        grid.addWidget(self.random_seed_checkbox, 0, 0)
+        grid.addWidget(self.rotate_checkbox, 0, 1)
+        grid.addWidget(self.auto_save_on_exit_checkbox, 1, 0)
+        grid.addWidget(self.instancing_checkbox, 1, 1)
+        grid.addWidget(self.select_created_checkbox, 2, 0)
+
         rotation_layout.addWidget(self.rotation_label)
         rotation_layout.addWidget(self.rotation_slider)
         rotation_layout.addWidget(self.rotation_box)
