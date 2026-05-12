@@ -12,6 +12,7 @@ class BookitSettings:
     delete_percent: int = 0
     rotation_value: int = 0
     auto_save_on_exit_button: bool = False
+    instancing_support: bool = True
 
 def get_settings_path():
     folder = os.path.join(cmds.internalVar(userAppDir=True), 'bookit')

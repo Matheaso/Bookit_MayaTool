@@ -44,6 +44,7 @@ dev.run()
 - Chance to Skip Book (%)
 - Preview vs Bake workflow
 - Persistent settings with option to remove saved settings
+- Instancing support
 
 ---
 

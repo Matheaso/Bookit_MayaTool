@@ -12,12 +12,13 @@ class BookitTool:
         self.curve_shape_job = None
         self.last_seed = None
 
+        self.delete_percent = 0
+        self.rotation_value = 0
+
         self.rotate = True
         self.auto_select = False
+        self.is_instancing = True
 
-        self.delete_percent = 0
-
-        self.rotation_value = 0
 
     def bake(self):
         if not self.preview_books:
@@ -27,11 +28,13 @@ class BookitTool:
 
         self.preview_books = []
 
+
     def kill_curve_shape_job(self):
         if self.curve_shape_job and cmds.scriptJob(exists=self.curve_shape_job):
             cmds.scriptJob(kill=self.curve_shape_job, force=True)
 
         self.curve_shape_job = None
+
 
     def watch_curve_shape(self):
         self.kill_curve_shape_job()
@@ -57,6 +60,7 @@ class BookitTool:
     def on_curve_shape_changed(self):
         self.generate(self.last_seed)
 
+
     def set_books_from_selection(self):
         self.meshes = []
         objs = cmds.ls(selection=True) or []
@@ -80,6 +84,7 @@ class BookitTool:
             for book in self.preview_books:
                 cmds.delete(book)
             self.preview_books = []
+
 
     def cleanup(self):
         self.kill_curve_shape_job()
@@ -133,7 +138,10 @@ class BookitTool:
                     current_distance += width + offset
                     continue
 
-                new_book = cmds.duplicate(source_book, name=f"{source_book}_bookit#")[0]
+                if self.is_instancing:
+                    new_book = cmds.instance(source_book, name=f"{source_book}_inst_bookit#")[0]
+                else:
+                    new_book = cmds.duplicate(source_book, name=f"{source_book}_bookit#")[0]
 
                 sample_distance = current_distance + width * 0.5
                 percent = sample_distance / curve_length
