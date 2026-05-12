@@ -1,4 +1,4 @@
-# Bookit Tool (Book placement)
+# Bookit Tool 1.0.3 (Book placement)
 
 Created by Maciej Sojka
 
