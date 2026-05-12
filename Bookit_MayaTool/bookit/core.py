@@ -11,6 +11,7 @@ class BookitTool:
         self.curve = None
         self.curve_shape_job = None
         self.last_seed = None
+        self.preview_group = None
 
         self.delete_percent = 0
         self.rotation_value = 0
@@ -19,14 +20,21 @@ class BookitTool:
         self.auto_select = False
         self.is_instancing = True
 
+    def ensure_preview_group(self):
+        if self.preview_group and cmds.objExists(self.preview_group):
+            return self.preview_group
+
+        self.preview_group = cmds.group(empty=True, name="bookit_preview")
+        return self.preview_group
 
     def bake(self):
-        if not self.preview_books:
+        if not self.preview_group or not cmds.objExists(self.preview_group):
             cmds.warning("Nothing to bake!")
             return
-        cmds.group(self.preview_books, name="bookit_result")
 
+        self.preview_group = cmds.rename(self.preview_group, "bookit_result")
         self.preview_books = []
+        self.preview_group = None
 
 
     def kill_curve_shape_job(self):
@@ -81,8 +89,8 @@ class BookitTool:
     def clear_preview_books(self):
 
         if self.preview_books:
-            for book in self.preview_books:
-                cmds.delete(book)
+            cmds.delete(self.preview_group)
+            self.preview_group = None
             self.preview_books = []
 
 
@@ -123,6 +131,8 @@ class BookitTool:
 
             offset = 0.1
 
+            preview_group = self.ensure_preview_group()
+
             while current_distance < curve_length:
                 source_book = rng.choice(books)
 
@@ -142,6 +152,8 @@ class BookitTool:
                     new_book = cmds.instance(source_book, name=f"{source_book}_inst_bookit#")[0]
                 else:
                     new_book = cmds.duplicate(source_book, name=f"{source_book}_bookit#")[0]
+
+                cmds.parent(new_book, preview_group)
 
                 sample_distance = current_distance + width * 0.5
                 percent = sample_distance / curve_length
